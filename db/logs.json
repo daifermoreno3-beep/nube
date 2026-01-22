@@ -70,5 +70,12 @@
         "details": "Enviado a papelera: uploads\/test1\/test",
         "level": "INFO",
         "ip": "190.6.34.209"
+    },
+    {
+        "at": "2026-01-21 23:26:00",
+        "user": "3",
+        "action": "REGISTER",
+        "details": "Cuenta creada",
+        "type": "INFO"
     }
 ]
