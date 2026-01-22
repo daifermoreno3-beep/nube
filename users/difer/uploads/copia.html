@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aether Cloud Pro - Enterprise Edition</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'], mono: ['JetBrains Mono', 'monospace'] },
+                    colors: {
+                        bg: '#050505',
+                        panel: '#0a0a0a',
+                        card: '#111111',
+                        border: '#1f1f1f',
+                        accent: '#3b82f6',
+                        accentHover: '#2563eb'
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        :root {
+            --bg-main: #050505;
+            --bg-panel: #0a0a0a;
+            --bg-card: #111111;
+            --border-color: #1f1f1f;
+            --accent: #3b82f6;
+            --text-main: #f4f4f5;
+            --text-muted: #71717a;
+        }
+
+        body { 
+            background-color: var(--bg-main); 
+            color: var(--text-main);
+            overflow: hidden;
+            user-select: none;
+        }
+
+        /* Scrollbars */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #3f3f46; }
+
+        /* Glassmorphism */
+        .glass { background: rgba(10, 10, 10, 0.7); backdrop-filter: blur(12px); border: 1px solid var(--border-color); }
+        .glass-strong { background: rgba(0,0,0,0.8); backdrop-filter: blur(20px); }
+
+        /* Transitions */
+        .fade-enter { opacity: 0; transform: translateY(10px); }
+        .fade-enter-active { opacity: 1; transform: translateY(0); transition: all 0.2s ease-out; }
+        .slide-in-right { transform: translateX(100%); }
+        .slide-in-right-active { transform: translateX(0); transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+
+        /* File List Styles */
+        .file-row { display: grid; grid-template-columns: 2rem 3fr 1fr 1.5fr 100px; align-items: center; padding: 0.75rem 1.5rem; border-bottom: 1px solid #141414; cursor: pointer; transition: background 0.1s; }
+        .file-row:hover { background-color: rgba(255,255,255,0.03); }
+        .file-row.selected { background-color: rgba(59, 130, 246, 0.1); border-left: 3px solid var(--accent); }
+
+        /* Grid View Styles */
+        .file-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 1rem; padding: 1rem; }
+        .file-card { 
+            display: flex; flex-direction: column; align-items: center; justify-content: center; 
+            padding: 1.5rem; border-radius: 1rem; border: 1px solid var(--border-color); 
+            background: var(--bg-card); transition: all 0.2s; cursor: pointer; position: relative;
+        }
+        .file-card:hover { transform: translateY(-2px); border-color: #3f3f46; background: #18181b; }
+        .file-card.selected { border-color: var(--accent); background: rgba(59, 130, 246, 0.05); box-shadow: 0 0 15px rgba(59,130,246,0.1); }
+        .file-card i { font-size: 2.5rem; margin-bottom: 1rem; color: #71717a; }
+        .file-card .filename { font-size: 0.8rem; text-align: center; word-break: break-word; line-height: 1.3; }
+
+        /* Context Menu */
+        #context-menu {
+            position: fixed; z-index: 1000; background: #18181b; border: 1px solid #27272a;
+            border-radius: 12px; padding: 6px; min-width: 200px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.8);
+            display: none; animation: scaleIn 0.15s cubic-bezier(0,0,0.2,1);
+        }
+        @keyframes scaleIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+        
+        .menu-item { padding: 10px 14px; display: flex; align-items: center; gap: 12px; cursor: pointer; font-size: 13px; color: #d4d4d8; border-radius: 8px; transition: 0.2s; }
+        .menu-item:hover { background: var(--accent); color: white; }
+        .menu-item.danger:hover { background: #7f1d1d; color: #fecaca; }
+
+        /* Loader Bar */
+        #top-loader { height: 2px; width: 0%; position: fixed; top: 0; left: 0; z-index: 9999; background: var(--accent); transition: width 0.2s; box-shadow: 0 0 10px var(--accent); }
+
+        /* Custom Checkbox */
+        .custom-checkbox { appearance: none; width: 16px; height: 16px; border: 1px solid #52525b; border-radius: 4px; background: #27272a; cursor: pointer; position: relative; }
+        .custom-checkbox:checked { background: var(--accent); border-color: var(--accent); }
+        .custom-checkbox:checked::after { content: '✓'; color: white; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 10px; }
+
+        /* Toast Notifications */
+        #toast-container { position: fixed; bottom: 24px; right: 24px; z-index: 2000; display: flex; flex-direction: column; gap: 10px; }
+        .toast { 
+            background: #18181b; border: 1px solid var(--border-color); padding: 12px 20px; 
+            border-radius: 8px; display: flex; align-items: center; gap: 12px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.5);
+            animation: slideInToast 0.3s cubic-bezier(0.16, 1, 0.3, 1); max-width: 350px;
+        }
+        @keyframes slideInToast { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Input Styles */
+        .input-dark { background: #09090b; border: 1px solid #27272a; color: white; transition: all 0.2s; }
+        .input-dark:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2); }
+    </style>
+</head>
+<body class="flex h-screen text-sm antialiased">
+
+    <!-- LOADER GLOBAL -->
+    <div id="top-loader"></div>
+    <div id="toast-container"></div>
+
+    <!-- PANTALLA DE LOGIN -->
+    <div id="auth-screen" class="fixed inset-0 z-[100] bg-[#000] flex items-center justify-center p-4 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-[#000000] to-[#000000]">
+        <div class="w-full max-w-[420px]">
+            <div class="text-center mb-10">
+                <div class="w-20 h-20 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-2xl shadow-blue-500/20 rotate-3 hover:rotate-0 transition-transform duration-500">
+                    <i class="fas fa-cube text-white text-3xl"></i>
+                </div>
+                <h1 class="text-3xl font-black tracking-tighter text-white">AETHER<span class="text-blue-600">.CLOUD</span></h1>
+                <p class="text-zinc-500 text-[10px] mt-2 uppercase tracking-[0.3em] font-bold">Sistema de Archivos Seguro v2.0</p>
+            </div>
+
+            <div class="glass p-8 rounded-3xl shadow-2xl border border-white/5">
+                <div class="flex gap-6 mb-8 border-b border-zinc-800">
+                    <button onclick="switchAuth('login')" id="tab-login" class="auth-tab active pb-3 text-xs font-bold transition-all tracking-widest border-b-2 border-transparent text-zinc-400 hover:text-white">INICIAR SESIÓN</button>
+                    <button onclick="switchAuth('register')" id="tab-register" class="auth-tab pb-3 text-xs font-bold transition-all tracking-widest border-b-2 border-transparent text-zinc-400 hover:text-white">REGISTRO</button>
+                </div>
+
+                <div class="space-y-5">
+                    <div>
+                        <label class="text-[9px] font-bold text-zinc-500 uppercase ml-1 tracking-widest">Usuario Corporativo</label>
+                        <input type="text" id="auth-user" class="w-full bg-black/40 border border-zinc-800 p-3.5 rounded-xl outline-none focus:border-blue-500 transition-all text-sm mt-1 input-dark" placeholder="admin">
+                    </div>
+                    <div>
+                        <label class="text-[9px] font-bold text-zinc-500 uppercase ml-1 tracking-widest">Contraseña Maestra</label>
+                        <input type="password" id="auth-pass" class="w-full bg-black/40 border border-zinc-800 p-3.5 rounded-xl outline-none focus:border-blue-500 transition-all text-sm mt-1 input-dark" placeholder="••••••••">
+                    </div>
+                    
+                    <button onclick="submitAuth()" id="auth-btn" class="w-full bg-blue-600 text-white font-bold py-3.5 rounded-xl hover:bg-blue-500 transition-all active:scale-[0.98] shadow-lg shadow-blue-900/20 mt-4 text-xs tracking-widest uppercase flex justify-center items-center gap-2">
+                        <i class="fas fa-arrow-right"></i> <span id="auth-btn-text">Acceder al Sistema</span>
+                    </button>
+                    
+                    <button onclick="devReset()" class="w-full text-[9px] text-zinc-700 hover:text-red-500 mt-4 underline">[Dev] Resetear Base de Datos Local</button>
+                </div>
+            </div>
+            <p class="text-center text-zinc-800 text-[9px] mt-10 font-bold uppercase tracking-[0.4em]">© 2026 Aether Systems Inc.</p>
+        </div>
+    </div>
+
+    <!-- APLICACIÓN PRINCIPAL -->
+    <div id="app-screen" class="hidden flex h-screen w-full">
+        
+        <!-- SIDEBAR -->
+        <aside class="pro-sidebar w-64 bg-[#0a0a0a] border-r border-[#1f1f1f] flex flex-col hidden md:flex z-30">
+            <div class="p-6">
+                <div class="flex items-center gap-3 mb-8 cursor-pointer" onclick="navigateTo('')">
+                    <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center shadow-lg shadow-blue-600/20">
+                        <i class="fas fa-cube text-white text-xs"></i>
+                    </div>
+                    <span class="font-black tracking-tighter text-lg text-white">AETHER</span>
+                </div>
+
+                <div class="space-y-1 mb-8">
+                    <button onclick="navigateTo('')" id="nav-files" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-zinc-400 hover:bg-white/5 hover:text-white transition-all group">
+                        <i class="fas fa-hdd w-5 text-center group-hover:text-blue-500"></i> <span class="text-xs font-bold">Mis Archivos</span>
+                    </button>
+                    <button onclick="navigateTo('recent')" id="nav-recent" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-zinc-400 hover:bg-white/5 hover:text-white transition-all group">
+                        <i class="fas fa-clock w-5 text-center group-hover:text-emerald-500"></i> <span class="text-xs font-bold">Recientes</span>
+                    </button>
+                    <button onclick="navigateTo('starred')" id="nav-starred" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-zinc-400 hover:bg-white/5 hover:text-white transition-all group">
+                        <i class="fas fa-star w-5 text-center group-hover:text-amber-500"></i> <span class="text-xs font-bold">Favoritos</span>
+                    </button>
+                    <button onclick="navigateTo('trash')" id="nav-trash" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-zinc-400 hover:bg-white/5 hover:text-white transition-all group">
+                        <i class="fas fa-trash-alt w-5 text-center group-hover:text-red-500"></i> <span class="text-xs font-bold">Papelera</span>
+                    </button>
+                </div>
+
+                <div class="mt-auto">
+                    <div class="px-3 mb-2">
+                        <div class="flex justify-between text-[9px] font-bold text-zinc-600 mb-1.5 uppercase tracking-tighter">
+                            <span>Almacenamiento</span>
+                            <span id="storage-text">0%</span>
+                        </div>
+                        <div class="h-1.5 bg-zinc-900 rounded-full overflow-hidden">
+                            <div id="storage-bar" class="h-full bg-blue-600 transition-all duration-500" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-6 flex items-center gap-3 px-3 pt-4 border-t border-zinc-900">
+                        <div id="user-avatar" class="w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center font-bold text-xs text-zinc-300 border border-zinc-700">?</div>
+                        <div class="flex-1 overflow-hidden">
+                            <p id="user-name" class="text-xs font-bold truncate text-white">Usuario</p>
+                            <p class="text-[9px] text-zinc-600 font-medium">Plan Enterprise</p>
+                        </div>
+                        <button onclick="logout()" class="text-zinc-600 hover:text-red-500 p-2 rounded-md hover:bg-white/5 transition-colors"><i class="fas fa-power-off"></i></button>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- MAIN CONTENT -->
+        <main class="flex-1 flex flex-col min-w-0 bg-[#050505] relative">
+            
+            <!-- HEADER -->
+            <header class="h-16 px-6 flex items-center justify-between border-b border-[#1f1f1f] bg-[#050505]/90 backdrop-blur-md sticky top-0 z-20">
+                <div class="flex items-center gap-4">
+                    <button class="md:hidden text-zinc-400 hover:text-white" onclick="toggleMobileMenu()"><i class="fas fa-bars text-lg"></i></button>
+                    <!-- BREADCRUMB -->
+                    <div id="breadcrumb" class="flex items-center gap-2 text-xs text-zinc-500 font-mono">
+                        <span class="text-blue-600">root</span> / <span class="text-white">home</span>
+                    </div>
+                </div>
+                
+                <div class="flex items-center gap-3">
+                    <div class="relative group hidden lg:block">
+                        <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600 text-xs group-focus-within:text-blue-500 transition-colors"></i>
+                        <input type="text" id="file-search" oninput="handleSearch(this.value)" placeholder="Buscar..." class="bg-[#0a0a0a] border border-[#1f1f1f] rounded-lg pl-9 pr-4 py-1.5 text-[11px] font-bold outline-none focus:border-blue-500 w-48 transition-all focus:w-64 text-white placeholder-zinc-700">
+                    </div>
+                    
+                    <div class="h-4 w-[1px] bg-zinc-800 mx-1"></div>
+
+                    <!-- VIEW TOGGLES -->
+                    <div class="flex bg-[#0a0a0a] rounded-lg p-0.5 border border-[#1f1f1f]">
+                        <button onclick="setViewMode('list')" id="btn-view-list" class="p-1.5 rounded text-zinc-500 hover:text-white transition-all bg-zinc-800 text-white shadow-sm"><i class="fas fa-list"></i></button>
+                        <button onclick="setViewMode('grid')" id="btn-view-grid" class="p-1.5 rounded text-zinc-500 hover:text-white transition-all"><i class="fas fa-th-large"></i></button>
+                    </div>
+
+                    <button onclick="openUploadModal()" class="bg-white text-black text-[10px] font-bold px-4 py-2 rounded-lg hover:bg-zinc-200 transition-all shadow-lg shadow-white/5 active:scale-95 flex items-center gap-2">
+                        <i class="fas fa-plus"></i> SUBIR
+                    </button>
+                </div>
+            </header>
+
+            <!-- TOOLBAR (Selection) -->
+            <div id="selection-toolbar" class="hidden px-6 py-2 bg-blue-900/10 border-b border-blue-500/20 flex items-center justify-between animate-[slideInRight_0.2s_ease-out]">
+                <div class="flex items-center gap-3">
+                    <span id="selection-count" class="text-xs font-bold text-blue-400">0 seleccionados</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button onclick="downloadSelection()" class="p-2 text-zinc-400 hover:text-white transition-colors rounded hover:bg-white/5" title="Descargar"><i class="fas fa-download"></i></button>
+                    <button onclick="toggleStarSelection()" class="p-2 text-zinc-400 hover:text-amber-400 transition-colors rounded hover:bg-white/5" title="Favorito"><i class="fas fa-star"></i></button>
+                    <div class="w-[1px] h-4 bg-zinc-800 mx-1"></div>
+                    <button onclick="deleteSelection()" class="p-2 text-zinc-400 hover:text-red-500 transition-colors rounded hover:bg-white/5" title="Eliminar"><i class="fas fa-trash"></i></button>
+                    <button onclick="clearSelection()" class="text-[10px] font-bold text-zinc-500 uppercase px-2 hover:text-white">Cancelar</button>
+                </div>
+            </div>
+
+            <!-- FILE AREA -->
+            <div class="flex-1 overflow-hidden relative flex">
+                
+                <!-- DROP ZONE & LIST -->
+                <div id="drop-zone" class="flex-1 flex flex-col min-w-0 relative">
+                    
+                    <!-- Table Header (List Mode Only) -->
+                    <div id="list-header" class="file-row text-[10px] font-bold text-zinc-600 uppercase tracking-wider border-b border-[#1f1f1f] bg-[#050505] sticky top-0 z-10 select-none">
+                        <div class="flex justify-center"><input type="checkbox" id="master-checkbox" onclick="toggleSelectAll()" class="custom-checkbox"></div>
+                        <div>Nombre</div>
+                        <div>Fecha</div>
+                        <div>Tamaño</div>
+                        <div></div>
+                    </div>
+
+                    <!-- Content Container -->
+                    <div id="file-container" class="flex-1 overflow-y-auto custom-scroll relative">
+                        <!-- Renderizado dinámico aquí -->
+                    </div>
+                    
+                    <!-- Empty State -->
+                    <div id="empty-state" class="hidden absolute inset-0 top-12 flex flex-col items-center justify-center pointer-events-none opacity-30">
+                        <i class="fas fa-folder-open text-6xl mb-4 text-zinc-600"></i>
+                        <p class="text-lg font-bold text-zinc-500">No hay archivos aquí</p>
+                        <p class="text-xs text-zinc-700">Arrastra archivos para subir</p>
+                    </div>
+                </div>
+
+                <!-- DETAILS SIDEBAR (Right) -->
+                <aside id="details-sidebar" class="w-80 bg-[#0a0a0a] border-l border-[#1f1f1f] p-6 hidden flex-col overflow-y-auto custom-scroll absolute right-0 top-0 bottom-0 z-20 slide-in-right-active shadow-2xl">
+                    <button onclick="closeDetails()" class="absolute top-4 right-4 text-zinc-600 hover:text-white transition-colors"><i class="fas fa-times"></i></button>
+                    
+                    <div id="details-content" class="mt-4">
+                        <!-- Dynamic Content -->
+                    </div>
+                </aside>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- MODAL: UPLOAD -->
+    <dialog id="modal-upload" class="bg-transparent p-0 backdrop:bg-black/80 backdrop:backdrop-blur-sm">
+        <div class="glass w-[500px] rounded-2xl p-6 shadow-2xl">
+            <h3 class="text-white font-bold text-lg mb-4">Subir Archivos</h3>
+            <div id="upload-area" class="border-2 border-dashed border-zinc-700 rounded-xl p-8 flex flex-col items-center justify-center text-center hover:border-blue-500 hover:bg-blue-500/5 transition-all cursor-pointer h-48">
+                <i class="fas fa-cloud-upload-alt text-4xl text-zinc-600 mb-4"></i>
+                <p class="text-zinc-400 text-sm">Arrastra archivos aquí o haz clic para explorar</p>
+                <p class="text-zinc-600 text-xs mt-2">Soporta todo tipo de archivos</p>
+                <input type="file" id="file-input" multiple class="hidden">
+            </div>
+            <div class="flex justify-end gap-3 mt-6">
+                <button onclick="closeUploadModal()" class="px-4 py-2 rounded-lg text-xs font-bold text-zinc-400 hover:text-white hover:bg-white/5 transition-all">Cancelar</button>
+            </div>
+        </div>
+    </dialog>
+
+    <!-- MODAL: PREVIEW -->
+    <dialog id="modal-preview" class="bg-transparent p-0 backdrop:bg-black/90 backdrop:backdrop-blur-sm w-full h-full max-w-none max-h-none">
+        <div class="w-full h-full flex items-center justify-center relative">
+            <button onclick="document.getElementById('modal-preview').close()" class="absolute top-6 right-6 text-white/50 hover:text-white text-2xl z-50"><i class="fas fa-times"></i></button>
+            <div id="preview-content" class="w-full max-w-4xl max-h-[90vh] bg-[#0a0a0a] rounded-lg border border-zinc-800 overflow-hidden flex flex-col">
+                <!-- Dynamic Preview -->
+            </div>
+        </div>
+    </dialog>
+
+    <!-- MODAL: GENERIC (Input) -->
+    <dialog id="modal-generic" class="bg-transparent p-0 backdrop:bg-black/60">
+        <div class="glass w-[400px] rounded-xl p-6 shadow-2xl">
+            <h3 id="generic-title" class="text-white font-bold mb-4">Título</h3>
+            <input type="text" id="generic-input" class="w-full bg-black border border-zinc-700 rounded-lg p-3 text-white outline-none focus:border-blue-500 mb-6">
+            <div class="flex justify-end gap-2">
+                <button onclick="document.getElementById('modal-generic').close()" class="px-4 py-2 rounded-lg text-xs font-bold text-zinc-400 hover:bg-white/5">Cancelar</button>
+                <button id="generic-confirm-btn" class="px-4 py-2 rounded-lg text-xs font-bold bg-blue-600 text-white hover:bg-blue-500">Confirmar</button>
+            </div>
+        </div>
+    </dialog>
+
+    <!-- CONTEXT MENU -->
+    <div id="context-menu">
+        <div class="menu-item" onclick="ctxAction('preview')"><i class="fas fa-eye w-4 text-blue-400"></i> Vista Previa</div>
+        <div class="menu-item" onclick="ctxAction('open')"><i class="fas fa-external-link-alt w-4 text-zinc-400"></i> Abrir</div>
+        <div class="menu-item" onclick="ctxAction('download')"><i class="fas fa-download w-4 text-zinc-400"></i> Descargar</div>
+        <div class="h-[1px] bg-zinc-800/50 my-1 mx-2"></div>
+        <div class="menu-item" onclick="ctxAction('star')"><i class="fas fa-star w-4 text-amber-400"></i> Favorito</div>
+        <div class="menu-item" onclick="ctxAction('rename')"><i class="fas fa-pen w-4 text-zinc-400"></i> Renombrar</div>
+        <div class="menu-item" onclick="ctxAction('details')"><i class="fas fa-info-circle w-4 text-zinc-400"></i> Detalles</div>
+        <div class="h-[1px] bg-zinc-800/50 my-1 mx-2"></div>
+        <div class="menu-item danger" onclick="ctxAction('delete')"><i class="fas fa-trash w-4"></i> Eliminar</div>
+    </div>
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script>
+        // --- 1. MOCK BACKEND & STATE MANAGEMENT ---
+        const StorageKey = 'aether_cloud_v2_data';
+        let state = {
+            user: null,
+            files: [], // { id, name, type, size, parent, date, content, starred, trashed }
+            path: 'root', // 'root' | 'trash' | 'starred' | 'recent'
+            selected: new Set(),
+            viewMode: 'list' // 'list' | 'grid'
+        };
+
+        const Utils = {
+            id: () => Math.random().toString(36).substr(2, 9),
+            date: () => new Date().toISOString(),
+            formatSize: (bytes) => {
+                if(bytes === 0) return '-';
+                const k = 1024; const sizes = ['B', 'KB', 'MB', 'GB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+            },
+            formatIcon: (type, name) => {
+                if (type === 'folder') return 'fa-folder text-yellow-500';
+                const ext = name.split('.').pop().toLowerCase();
+                const map = {
+                    'jpg': 'fa-file-image text-purple-400', 'png': 'fa-file-image text-purple-400',
+                    'pdf': 'fa-file-pdf text-red-400',
+                    'zip': 'fa-file-archive text-amber-400',
+                    'txt': 'fa-file-alt text-zinc-400',
+                    'js': 'fa-file-code text-blue-400', 'html': 'fa-file-code text-orange-400', 'css': 'fa-file-code text-blue-400',
+                    'mp4': 'fa-file-video text-pink-400'
+                };
+                return map[ext] || 'fa-file text-zinc-400';
+            }
+        };
+
+        // --- 2. CORE LOGIC (Simulated DB) ---
+        function initDB() {
+            const saved = localStorage.getItem(StorageKey);
+            if (saved) {
+                state.files = JSON.parse(saved);
+            } else {
+                // Seed data
+                state.files = [
+                    { id: Utils.id(), name: 'Proyectos Alpha', type: 'folder', parent: 'root', size: 0, date: Utils.date(), starred: true, trashed: false },
+                    { id: Utils.id(), name: 'Reporte Financiero.pdf', type: 'file', parent: 'root', size: 2400000, date: Utils.date(), starred: false, trashed: false, content: 'Mock PDF content...' },
+                    { id: Utils.id(), name: 'Avatar.jpg', type: 'file', parent: 'Proyectos Alpha', size: 450000, date: Utils.date(), starred: true, trashed: false, content: 'https://picsum.photos/seed/tech/400/400.jpg' },
+                    { id: Utils.id(), name: 'notes.txt', type: 'file', parent: 'root', size: 1024, date: Utils.date(), starred: false, trashed: false, content: 'Comprar café... Revisar servidor...' },
+                    { id: Utils.id(), name: 'Papelera', type: 'folder', parent: 'root', size: 0, date: Utils.date(), starred: false, trashed: true },
+                ];
+                saveDB();
+            }
+        }
+
+        function saveDB() {
+            localStorage.setItem(StorageKey, JSON.stringify(state.files));
+            updateStats();
+        }
+
+        function getFiles(path) {
+            if (path === 'trash') return state.files.filter(f => f.trashed);
+            if (path === 'starred') return state.files.filter(f => f.starred && !f.trashed);
+            if (path === 'recent') return state.files.filter(f => !f.trashed).sort((a,b) => new Date(b.date) - new Date(a.date));
+            return state.files.filter(f => f.parent === path && !f.trashed);
+        }
+
+        function createFile(name, type, content = '', size = 0) {
+            const newFile = {
+                id: Utils.id(),
+                name: name,
+                type: type,
+                parent: state.path === 'root' || state.path === 'trash' || state.path === 'starred' || state.path === 'recent' ? 'root' : state.path, // Si estamos en vista especial, guardar en root
+                size: size,
+                date: Utils.date(),
+                content: content,
+                starred: false,
+                trashed: false
+            };
+            state.files.push(newFile);
+            saveDB();
+            render();
+            showToast(`Archivo ${name} creado`, 'success');
+        }
+
+        // --- 3. UI RENDERING ---
+        function render() {
+            const container = document.getElementById('file-container');
+            const emptyState = document.getElementById('empty-state');
+            const currentFiles = getFiles(state.path);
+            
+            container.innerHTML = '';
+            state.selected.clear();
+            updateSelectionUI();
+
+            if (currentFiles.length === 0) {
+                emptyState.classList.remove('hidden');
+            } else {
+                emptyState.classList.add('hidden');
+                
+                // Apply View Mode Classes
+                if (state.viewMode === 'list') {
+                    document.getElementById('list-header').style.display = 'grid';
+                    container.className = 'flex-1 overflow-y-auto custom-scroll relative';
+                    currentFiles.forEach(file => container.appendChild(createRow(file)));
+                } else {
+                    document.getElementById('list-header').style.display = 'none';
+                    container.className = 'file-grid overflow-y-auto custom-scroll';
+                    currentFiles.forEach(file => container.appendChild(createCard(file)));
+                }
+            }
+            
+            updateBreadcrumb();
+            updateStats();
+            updateNavHighlight();
+        }
+
+        function createRow(file) {
+            const div = document.createElement('div');
+            div.className = `file-row group ${state.selected.has(file.id) ? 'selected' : ''}`;
+            div.onclick = (e) => handleRowClick(e, file);
+            div.ondblclick = () => openFile(file);
+            div.oncontextmenu = (e) => handleContextMenu(e, file);
+
+            div.innerHTML = `
+                <div class="flex justify-center" onclick="event.stopPropagation()">
+                    <input type="checkbox" class="custom-checkbox" ${state.selected.has(file.id) ? 'checked' : ''}>
+                </div>
+                <div class="flex items-center gap-3 overflow-hidden">
+                    <i class="fas ${Utils.formatIcon(file.type, file.name)} text-lg"></i>
+                    <span class="text-sm font-medium truncate text-zinc-200 group-hover:text-blue-400 transition-colors">${file.name}</span>
+                    ${file.starred ? '<i class="fas fa-star text-[10px] text-amber-500 ml-1"></i>' : ''}
+                </div>
+                <div class="text-[11px] font-mono text-zinc-500">${new Date(file.date).toLocaleDateString()}</div>
+                <div class="text-[11px] font-bold text-zinc-600 font-mono">${Utils.formatSize(file.size)}</div>
+                <div class="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button onclick="event.stopPropagation(); ctxAction('star', '${file.id}')" class="p-1.5 hover:bg-zinc-800 rounded text-zinc-500 hover:text-amber-500"><i class="fas fa-star text-xs"></i></button>
+                    <button onclick="event.stopPropagation(); ctxAction('details', '${file.id}')" class="p-1.5 hover:bg-zinc-800 rounded text-zinc-500 hover:text-white"><i class="fas fa-info-circle text-xs"></i></button>
+                    <button onclick="event.stopPropagation(); showMenu(event, '${file.id}')" class="p-1.5 hover:bg-zinc-800 rounded text-zinc-500 hover:text-white"><i class="fas fa-ellipsis-v text-xs"></i></button>
+                </div>
+            `;
+            return div;
+        }
+
+        function createCard(file) {
+            const div = document.createElement('div');
+            div.className = `file-card ${state.selected.has(file.id) ? 'selected' : ''}`;
+            div.onclick = (e) => { if(e.ctrlKey) toggleSelect(file.id); else { state.selected.clear(); toggleSelect(file.id); updateSelectionUI(); } };
+            div.ondblclick = () => openFile(file);
+            div.oncontextmenu = (e) => handleContextMenu(e, file);
+
+            div.innerHTML = `
+                <input type="checkbox" class="absolute top-2 right-2 custom-checkbox opacity-50 hover:opacity-100" ${state.selected.has(file.id) ? 'checked' : ''} onclick="event.stopPropagation()">
+                <i class="fas ${Utils.formatIcon(file.type, file.name)}"></i>
+                <div class="filename text-zinc-300 font-medium">${file.name}</div>
+                ${file.starred ? '<i class="fas fa-star text-[10px] text-amber-500 mt-2"></i>' : ''}
+            `;
+            return div;
+        }
+
+        // --- 4. INTERACTIONS & LOGIC ---
+        function navigateTo(path) {
+            state.path = path;
+            closeDetails();
+            render();
+        }
+
+        function handleRowClick(e, file) {
+            if (e.ctrlKey) {
+                toggleSelect(file.id);
+            } else if (!state.selected.has(file.id)) {
+                state.selected.clear();
+                toggleSelect(file.id);
+            }
+            updateSelectionUI();
+            render(); // Re-render to update checkboxes
+        }
+
+        function toggleSelect(id) {
+            if (state.selected.has(id)) state.selected.delete(id);
+            else state.selected.add(id);
+        }
+
+        function toggleSelectAll() {
+            const files = getFiles(state.path);
+            const master = document.getElementById('master-checkbox');
+            if (master.checked) {
+                files.forEach(f => state.selected.add(f.id));
+            } else {
+                state.selected.clear();
+            }
+            render();
+            updateSelectionUI();
+        }
+
+        function updateSelectionUI() {
+            const toolbar = document.getElementById('selection-toolbar');
+            const count = document.getElementById('selection-count');
+            const master = document.getElementById('master-checkbox');
+            
+            if (state.selected.size > 0) {
+                toolbar.classList.remove('hidden');
+                toolbar.classList.add('flex');
+                count.innerText = `${state.selected.size} seleccionados`;
+            } else {
+                toolbar.classList.add('hidden');
+                toolbar.classList.remove('flex');
+            }
+            master.checked = state.selected.size > 0 && state.selected.size === getFiles(state.path).length;
+        }
+
+        function clearSelection() {
+            state.selected.clear();
+            updateSelectionUI();
+            render();
+        }
+
+        function openFile(file) {
+            if (file.type === 'folder') {
+                navigateTo(file.name); // Note: In a real app, use ID, here use Name for simplicity in this demo
+            } else {
+                previewFile(file);
+            }
+        }
+
+        // Context Menu Logic
+        let ctxTarget = null;
+        function handleContextMenu(e, file) {
+            e.preventDefault();
+            ctxTarget = file;
+            const menu = document.getElementById('context-menu');
+            menu.style.display = 'block';
+            menu.style.left = `${e.clientX}px`;
+            menu.style.top = `${e.clientY}px`;
+        }
+
+        function showMenu(e, id) { // For the 3-dot button
+            e.stopPropagation();
+            ctxTarget = state.files.find(f => f.id === id);
+            const menu = document.getElementById('context-menu');
+            menu.style.display = 'block';
+            const rect = e.target.getBoundingClientRect();
+            menu.style.left = `${rect.left}px`;
+            menu.style.top = `${rect.bottom + 5}px`;
+        }
+
+        window.onclick = (e) => {
+            if (!e.target.closest('#context-menu')) document.getElementById('context-menu').style.display = 'none';
+        };
+
+        function ctxAction(action, id = null) {
+            const file = id ? state.files.find(f => f.id === id) : ctxTarget;
+            if (!file && action !== 'newFolder') return;
+
+            document.getElementById('context-menu').style.display = 'none';
+
+            switch(action) {
+                case 'open': openFile(file); break;
+                case 'preview': previewFile(file); break;
+                case 'rename': 
+                    promptInput('Renombrar Archivo', file.name, (val) => {
+                        file.name = val; saveDB(); render();
+                    });
+                    break;
+                case 'star': 
+                    file.starred = !file.starred; saveDB(); render(); 
+                    showToast(file.starred ? 'Añadido a favoritos' : 'Eliminado de favoritos');
+                    break;
+                case 'delete': 
+                    file.trashed = true; saveDB(); render(); showToast('Movido a papelera');
+                    break;
+                case 'details': showDetails(file); break;
+                case 'download': 
+                    showToast('Iniciando descarga...', 'info');
+                    // Mock download
+                    const a = document.createElement('a');
+                    a.href = 'data:text/plain;charset=utf-8,' + encodeURIComponent(file.content || 'Contenido simulado');
+                    a.download = file.name;
+                    a.click();
+                    break;
+            }
+        }
+
+        // --- 5. UI COMPONENTS & FEATURES ---
+        
+        // Search
+        function handleSearch(query) {
+            if (!query) { render(); return; }
+            const filtered = state.files.filter(f => f.name.toLowerCase().includes(query.toLowerCase()) && !f.trashed);
+            const container = document.getElementById('file-container');
+            container.innerHTML = '';
+            filtered.forEach(f => container.appendChild(createRow(f)));
+        }
+
+        // View Mode
+        function setViewMode(mode) {
+            state.viewMode = mode;
+            document.getElementById('btn-view-list').className = mode === 'list' ? 'p-1.5 rounded text-zinc-500 hover:text-white transition-all bg-zinc-800 text-white shadow-sm' : 'p-1.5 rounded text-zinc-500 hover:text-white transition-all';
+            document.getElementById('btn-view-grid').className = mode === 'grid' ? 'p-1.5 rounded text-zinc-500 hover:text-white transition-all bg-zinc-800 text-white shadow-sm' : 'p-1.5 rounded text-zinc-500 hover:text-white transition-all';
+            render();
+        }
+
+        // Preview Modal
+        function previewFile(file) {
+            const modal = document.getElementById('modal-preview');
+            const content = document.getElementById('preview-content');
+            
+            if (file.name.match(/\.(jpg|jpeg|png|gif)$/i) && file.content.startsWith('http')) {
+                content.innerHTML = `<img src="${file.content}" class="w-full h-full object-contain">`;
+            } else {
+                content.innerHTML = `
+                    <div class="p-8 text-center h-full flex flex-col items-center justify-center">
+                        <i class="fas ${Utils.formatIcon(file.type, file.name)} text-6xl text-zinc-700 mb-4"></i>
+                        <h2 class="text-2xl font-bold text-white mb-2">${file.name}</h2>
+                        <p class="text-zinc-500">Vista previa no disponible para este formato.</p>
+                        <div class="mt-8 bg-zinc-900 p-4 rounded-lg w-full max-w-lg text-left font-mono text-xs text-zinc-400 overflow-auto h-64 border border-zinc-800">
+                            ${file.content || 'Sin contenido extraíble'}
+                        </div>
+                    </div>
+                `;
+            }
+            modal.showModal();
+        }
+
+        // Details Sidebar
+        function showDetails(file) {
+            const sidebar = document.getElementById('details-sidebar');
+            const content = document.getElementById('details-content');
+            sidebar.classList.remove('hidden');
+            
+            content.innerHTML = `
+                <div class="flex flex-col items-center mb-6">
+                    <div class="w-24 h-24 rounded-2xl bg-zinc-900 flex items-center justify-center mb-4 border border-zinc-800 shadow-inner">
+                        <i class="fas ${Utils.formatIcon(file.type, file.name)} text-4xl text-zinc-400"></i>
+                    </div>
+                    <h2 class="text-lg font-bold text-white text-center leading-tight break-words w-full">${file.name}</h2>
+                </div>
+                
+                <div class="space-y-4">
+                    <div class="flex justify-between py-2 border-b border-zinc-800">
+                        <span class="text-zinc-500 text-xs">Tipo</span>
+                        <span class="text-white text-xs font-mono uppercase">${file.type}</span>
+                    </div>
+                    <div class="flex justify-between py-2 border-b border-zinc-800">
+                        <span class="text-zinc-500 text-xs">Tamaño</span>
+                        <span class="text-white text-xs font-mono">${Utils.formatSize(file.size)}</span>
+                    </div>
+                    <div class="flex justify-between py-2 border-b border-zinc-800">
+                        <span class="text-zinc-500 text-xs">Ubicación</span>
+                        <span class="text-white text-xs font-mono truncate max-w-[150px]">/${file.parent}</span>
+                    </div>
+                    <div class="flex justify-between py-2 border-b border-zinc-800">
+                        <span class="text-zinc-500 text-xs">Modificado</span>
+                        <span class="text-white text-xs">${new Date(file.date).toLocaleString()}</span>
+                    </div>
+                </div>
+
+                <div class="mt-8 space-y-2">
+                    <button onclick="ctxAction('download')" class="w-full bg-blue-600 text-white text-xs font-bold py-2.5 rounded-lg hover:bg-blue-500 transition-colors"><i class="fas fa-download mr-2"></i> Descargar</button>
+                    <button onclick="ctxAction('rename')" class="w-full bg-zinc-800 text-zinc-300 text-xs font-bold py-2.5 rounded-lg hover:bg-zinc-700 transition-colors">Renombrar</button>
+                    <button onclick="ctxAction('delete')" class="w-full bg-red-900/20 text-red-500 text-xs font-bold py-2.5 rounded-lg hover:bg-red-900/30 transition-colors">Eliminar</button>
+                </div>
+            `;
+        }
+
+        function closeDetails() {
+            document.getElementById('details-sidebar').classList.add('hidden');
+        }
+
+        // Upload System
+        function openUploadModal() {
+            document.getElementById('modal-upload').showModal();
+        }
+        function closeUploadModal() {
+            document.getElementById('modal-upload').close();
+        }
+
+        const uploadArea = document.getElementById('upload-area');
+        uploadArea.onclick = () => document.getElementById('file-input').click();
+        
+        document.getElementById('file-input').onchange = (e) => handleFiles(e.target.files);
+        uploadArea.ondragover = (e) => { e.preventDefault(); uploadArea.classList.add('border-blue-500', 'bg-blue-500/10'); };
+        uploadArea.ondragleave = (e) => { e.preventDefault(); uploadArea.classList.remove('border-blue-500', 'bg-blue-500/10'); };
+        uploadArea.ondrop = (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('border-blue-500', 'bg-blue-500/10');
+            handleFiles(e.dataTransfer.files);
+            closeUploadModal();
+        };
+
+        async function handleFiles(fileList) {
+            setLoader(10);
+            for (let i = 0; i < fileList.length; i++) {
+                const f = fileList[i];
+                let content = '';
+                // Si es imagen pequeña, guardar base64 para demo
+                if (f.size < 500000 && f.type.startsWith('image/')) {
+                    content = await toBase64(f);
+                } else {
+                    content = f.name; // Mock content
+                }
+                createFile(f.name, 'file', content, f.size);
+                setLoader(10 + ((i+1)/fileList.length * 90));
+            }
+            setTimeout(() => setLoader(100), 500);
+        }
+
+        // Generic Input Modal
+        function promptInput(title, defaultValue, callback) {
+            const modal = document.getElementById('modal-generic');
+            document.getElementById('generic-title').innerText = title;
+            const input = document.getElementById('generic-input');
+            input.value = defaultValue;
+            modal.showModal();
+            
+            const confirm = document.getElementById('generic-confirm-btn');
+            confirm.onclick = () => {
+                if(input.value.trim()) {
+                    callback(input.value.trim());
+                    modal.close();
+                }
+            };
+            input.onkeydown = (e) => { if(e.key === 'Enter') confirm.click(); };
+        }
+
+        // --- 6. UTILITIES & AUTH ---
+        function updateStats() {
+            const total = state.files.reduce((acc, f) => acc + f.size, 0);
+            const limit = 100 * 1024 * 1024; // 100MB Mock Limit
+            const pct = Math.min(100, Math.round((total / limit) * 100));
+            
+            document.getElementById('storage-text').innerText = `${pct}%`;
+            document.getElementById('storage-bar').style.width = `${pct}%`;
+            document.getElementById('storage-bar').className = `h-full transition-all duration-500 ${pct > 90 ? 'bg-red-500' : 'bg-blue-600'}`;
+        }
+
+        function updateBreadcrumb() {
+            const b = document.getElementById('breadcrumb');
+            let path = state.path === 'root' ? 'Home' : 
+                        state.path === 'trash' ? 'Papelera' : 
+                        state.path === 'starred' ? 'Favoritos' : 
+                        state.path === 'recent' ? 'Recientes' : state.path;
+            b.innerHTML = `<span class="text-blue-500">ROOT</span> / <span class="text-white font-bold">${path.toUpperCase()}</span>`;
+        }
+
+        function updateNavHighlight() {
+            ['files', 'recent', 'starred', 'trash'].forEach(id => {
+                const btn = document.getElementById(`nav-${id}`);
+                const active = (id === 'files' && state.path === 'root') || state.path === id;
+                btn.className = `w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all group ${active ? 'bg-white/5 text-white font-bold' : 'text-zinc-400 hover:bg-white/5 hover:text-white'}`;
+            });
+        }
+
+        function showToast(msg, type='success') {
+            const container = document.getElementById('toast-container');
+            const el = document.createElement('div');
+            el.className = 'toast';
+            const icon = type === 'success' ? 'check-circle text-emerald-500' : 'info-circle text-blue-500';
+            el.innerHTML = `<i class="fas fa-${icon} text-lg"></i> <span class="text-xs font-bold text-zinc-200">${msg}</span>`;
+            container.appendChild(el);
+            setTimeout(() => {
+                el.style.opacity = '0';
+                el.style.transform = 'translateY(20px)';
+                setTimeout(() => el.remove(), 300);
+            }, 3000);
+        }
+
+        function setLoader(val) {
+            const l = document.getElementById('top-loader');
+            l.style.width = val + '%';
+            if(val >= 100) setTimeout(() => { l.style.width = '0'; }, 500);
+        }
+
+        function toBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = error => reject(error);
+            });
+        }
+
+        // Auth System
+        function switchAuth(mode) {
+            document.querySelectorAll('.auth-tab').forEach(t => {
+                t.classList.remove('active', 'text-white', 'border-blue-600');
+                t.classList.add('text-zinc-400', 'border-transparent');
+            });
+            const active = document.getElementById(`tab-${mode}`);
+            active.classList.add('active', 'text-white', 'border-blue-600');
+            active.classList.remove('text-zinc-400', 'border-transparent');
+        }
+
+        function submitAuth() {
+            const user = document.getElementById('auth-user').value;
+            const pass = document.getElementById('auth-pass').value;
+            const btnText = document.getElementById('auth-btn-text');
+            
+            if(!user || !pass) return showToast('Completa todos los campos', 'info');
+            
+            btnText.innerText = 'Verificando...';
+            setLoader(50);
+            
+            setTimeout(() => {
+                setLoader(100);
+                state.user = user;
+                document.getElementById('user-name').innerText = user;
+                document.getElementById('user-avatar').innerText = user[0].toUpperCase();
+                
+                document.getElementById('auth-screen').classList.add('hidden');
+                document.getElementById('app-screen').classList.remove('hidden');
+                
+                initDB();
+                render();
+                showToast(`Bienvenido, ${user}`);
+            }, 1000);
+        }
+
+        function logout() {
+            location.reload();
+        }
+
+        function devReset() {
+            localStorage.removeItem(StorageKey);
+            showToast('Base de datos reiniciada');
+        }
+
+        // Drop Zone (Main Area)
+        const mainDrop = document.getElementById('app-screen');
+        mainDrop.ondragover = (e) => { e.preventDefault(); document.getElementById('drop-zone').classList.add('bg-blue-900/10'); };
+        mainDrop.ondragleave = (e) => { e.preventDefault(); document.getElementById('drop-zone').classList.remove('bg-blue-900/10'); };
+        mainDrop.ondrop = (e) => {
+            e.preventDefault();
+            document.getElementById('drop-zone').classList.remove('bg-blue-900/10');
+            handleFiles(e.dataTransfer.files);
+        };
+
+        // Init
+        // (Session check logic would go here, for demo we start at login)
+    </script>
+</body>
+</html>
