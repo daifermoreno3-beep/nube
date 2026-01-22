@@ -38,5 +38,13 @@
         "details": "Carpeta creada: test en \/",
         "level": "INFO",
         "ip": "190.6.34.209"
+    },
+    {
+        "timestamp": "2026-01-21 23:20:18",
+        "user": "test1",
+        "action": "DELETE",
+        "details": "Enviado a papelera: uploads\/test1\/image.png",
+        "level": "INFO",
+        "ip": "190.6.34.209"
     }
 ]
