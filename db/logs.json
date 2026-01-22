@@ -161,5 +161,12 @@
         "action": "TRASH",
         "details": "Movido a papelera: uploads\/3\/.trash\/1769056224_1769056192_image.png",
         "type": "INFO"
+    },
+    {
+        "at": "2026-01-21 23:30:38",
+        "user": "3",
+        "action": "TRASH",
+        "details": "Movido a papelera: uploads\/3\/.trash\/1769056204_cC.png",
+        "type": "INFO"
     }
 ]
