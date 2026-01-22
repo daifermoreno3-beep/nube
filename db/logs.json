@@ -105,5 +105,12 @@
         "action": "UPLOAD",
         "details": "Subido exitoso: image.png",
         "type": "INFO"
+    },
+    {
+        "at": "2026-01-21 23:26:42",
+        "user": "3",
+        "action": "UPLOAD",
+        "details": "Subido exitoso: cC.png",
+        "type": "INFO"
     }
 ]
