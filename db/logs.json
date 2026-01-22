@@ -14,5 +14,13 @@
         "details": "Intento de registro con usuario duplicado",
         "level": "WARN",
         "ip": "190.6.34.209"
+    },
+    {
+        "timestamp": "2026-01-21 23:14:37",
+        "user": "test1",
+        "action": "LOGIN",
+        "details": "Sesi\u00f3n iniciada correctamente",
+        "level": "INFO",
+        "ip": "190.6.34.209"
     }
 ]
