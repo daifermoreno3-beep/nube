@@ -22,5 +22,13 @@
         "details": "Sesi\u00f3n iniciada correctamente",
         "level": "INFO",
         "ip": "190.6.34.209"
+    },
+    {
+        "timestamp": "2026-01-21 23:20:02",
+        "user": "test1",
+        "action": "UPLOAD",
+        "details": "Archivo subido: image.png en \/",
+        "level": "INFO",
+        "ip": "190.6.34.209"
     }
 ]
