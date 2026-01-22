@@ -46,5 +46,13 @@
         "details": "Enviado a papelera: uploads\/test1\/image.png",
         "level": "INFO",
         "ip": "190.6.34.209"
+    },
+    {
+        "timestamp": "2026-01-21 23:20:30",
+        "user": "test1",
+        "action": "MKDIR",
+        "details": "Carpeta creada: tes en \/.trash",
+        "level": "INFO",
+        "ip": "190.6.34.209"
     }
 ]
