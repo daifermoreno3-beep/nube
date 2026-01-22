@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestor Password - Servidor Local</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+        :root {
+            --bg: #f8f9fa; --card: #ffffff; --text: #1a1d21; --muted: #64748b;
+            --border: #e2e8f0; --accent: #2563eb; --success: #10b981; --danger: #ef4444;
+        }
+
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); margin: 0; min-height: 100vh; display: flex; justify-content: center; padding: 40px 20px; box-sizing: border-box; }
+        .container { width: 100%; max-width: 1000px; }
+        .card { background: var(--card); padding: 32px; border-radius: 16px; border: 1px solid var(--border); box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .hidden { display: none !important; }
+
+        label { display: block; font-size: 0.7rem; font-weight: 700; margin-bottom: 8px; color: var(--muted); text-transform: uppercase; }
+        .input-field { width: 100%; padding: 12px 16px; border: 1px solid var(--border); border-radius: 8px; font-size: 0.9rem; margin-bottom: 20px; outline: none; box-sizing: border-box; }
+
+        .pass-box { background: #f1f5f9; padding: 24px; border-radius: 12px; text-align: center; margin-bottom: 10px; border: 1px solid var(--border); }
+        .blur-text { font-family: 'SF Mono', monospace; font-size: 1.4rem; font-weight: 600; filter: blur(10px); transition: 0.3s; cursor: pointer; color: var(--accent); overflow-wrap: break-word; }
+        .blur-text:hover { filter: blur(0); }
+        .no-blur { filter: blur(0) !important; }
+
+        .strength-container { height: 6px; width: 100%; background: var(--border); border-radius: 10px; margin-bottom: 24px; overflow: hidden; }
+        .strength-bar { height: 100%; width: 0%; transition: 0.5s ease; background: var(--success); }
+
+        .btn { width: 100%; padding: 14px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: 0.2s; font-size: 0.85rem; display: flex; align-items: center; justify-content: center; }
+        .btn-main { background: var(--accent); color: white; }
+        .btn-success { background: var(--success); color: white; }
+        .btn-outline { background: white; color: var(--text); border: 1px solid var(--border); }
+        
+        .pill { padding: 8px 16px; border-radius: 20px; border: 1px solid var(--border); background: white; font-size: 0.75rem; cursor: pointer; transition: 0.2s; font-weight: 500; }
+        .pill.active { background: var(--text); color: white; }
+
+        #logs { display: flex; flex-direction: column; gap: 15px; }
+        .log-item { padding: 20px; border-radius: 12px; border: 1px solid var(--border); background: white; width: 100%; box-sizing: border-box; }
+        
+        .modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 30px; border-radius: 16px; z-index: 1000; border: 1px solid var(--border); width: 320px; }
+        .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.4); backdrop-filter: blur(4px); z-index: 999; }
+        
+        .loader { width: 16px; height: 16px; border: 2px solid #FFF; border-bottom-color: transparent; border-radius: 50%; display: inline-block; animation: rotation 1s linear infinite; margin-right: 8px; }
+        @keyframes rotation { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+<div class="overlay" id="overlay" onclick="closeModal()"></div>
+
+<div class="container">
+    <div id="authScreen" class="card" style="max-width: 400px; margin: 60px auto;">
+        <div style="text-align:center; margin-bottom:30px;">
+            <div style="font-weight:700; font-size:1.4rem; letter-spacing:-1px;">GESTOR<span style="color:var(--accent)">PASSWORD</span></div>
+            <p style="color:var(--muted); font-size:0.8rem;">Servidor Local Activo</p>
+        </div>
+
+        <div id="loginForm">
+            <input type="email" id="lEmail" class="input-field" placeholder="Correo electrónico">
+            <input type="password" id="lPass" class="input-field" placeholder="Master Password">
+            <button id="btnLogin" class="btn btn-main" onclick="handleAuth('login')">Entrar</button>
+            <div style="display:flex; justify-content:space-between; margin-top:20px; font-size:0.75rem;">
+                <span style="color:var(--muted); cursor:pointer;" onclick="showF('reg')">Crear Nueva Cuenta</span>
+                <span style="color:var(--accent); cursor:pointer;" onclick="showF('forgot')">Recuperar</span>
+            </div>
+        </div>
+
+        <div id="regForm" class="hidden">
+            <input type="email" id="rEmail" class="input-field" placeholder="Correo (Gmail)">
+            <input type="password" id="rPass" class="input-field" placeholder="Contraseña Maestra">
+            <label>Seguridad 1: Mascota</label><input type="text" id="rA1" class="input-field">
+            <label>Seguridad 2: Ciudad Natal</label><input type="text" id="rA2" class="input-field">
+            <button id="btnReg" class="btn btn-main" onclick="handleAuth('register')">Registrar y Entrar</button>
+            <button class="btn-outline" style="border:none; margin-top:10px; width:100%; font-size:0.75rem;" onclick="showF('login')">Volver al login</button>
+        </div>
+
+        <div id="forgotForm" class="hidden">
+            <p style="font-size: 0.8rem; color: var(--muted); margin-bottom: 15px;">Para recuperar, contacte al admin o responda:</p>
+            <input type="email" id="fEmail" class="input-field" placeholder="Correo a recuperar">
+            <button class="btn btn-main" onclick="alert('Funcionalidad de recuperación en desarrollo para local.')">Validar Identidad</button>
+            <button class="btn-outline" style="border:none; margin-top:10px; width:100%; font-size:0.75rem;" onclick="showF('login')">Cancelar</button>
+        </div>
+    </div>
+
+    <div id="mainContent" class="hidden">
+        <header style="display:flex; justify-content:space-between; align-items:center; margin-bottom:30px;">
+            <div style="font-weight:700; font-size:1.1rem;">Panel de Control</div>
+            <div style="display:flex; gap:12px; align-items:center;">
+                <span id="uDisp" style="font-size:0.75rem; color:var(--muted); font-weight:600;"></span>
+                <button class="btn btn-outline" style="padding:6px 12px; font-size:0.7rem; width: auto;" onclick="logout()">Salir</button>
+            </div>
+        </header>
+
+        <div style="display:grid; grid-template-columns: 1fr; gap:30px;">
+            <div class="card">
+                <label>Generador</label>
+                <div class="pass-box"><div id="pOut" class="blur-text">••••••••••••</div></div>
+                <div class="strength-container"><div id="strengthBar" class="strength-bar"></div></div>
+
+                <div style="display:flex; gap:10px; margin-bottom:20px;">
+                    <button class="pill active" id="btnN" onclick="setMode('normal')">Estándar</button>
+                    <button class="pill" id="btnA" onclick="setMode('adv')">Avanzada</button>
+                </div>
+
+                <div id="advP" class="hidden" style="background:#f8fafc; padding:20px; border-radius:8px; margin-bottom:20px; border:1px solid var(--border);">
+                    <div style="display:flex; justify-content:space-between; font-size:0.8rem; align-items:center;">
+                        <span>Longitud (12 - 32)</span>
+                        <input type="number" id="len" value="16" min="12" max="32" style="width:55px; text-align:center; padding:5px; border:1px solid var(--border); border-radius:4px;">
+                    </div>
+                </div>
+
+                <input type="text" id="desc" class="input-field" placeholder="Etiqueta (ej. Netflix, Banco)">
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+                    <button id="btnGen" class="btn btn-outline" onclick="handleGenBtn()">Generar</button>
+                    <button id="btnSave" class="btn btn-main" onclick="save()">Guardar Local</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <input type="text" id="search" class="input-field" placeholder="🔍 Buscar en mis registros..." oninput="renderLocal()">
+                <div id="logs" style="max-height:550px; overflow-y:auto;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="modal-qr" class="modal">
+    <div id="qr-area" style="background:white; padding:15px; border-radius:8px; text-align:center;">
+        <div id="qrcode" style="display:inline-block;"></div>
+        <p id="qr-label" style="font-weight:700; font-size:0.85rem; margin-top:15px; color:#000;"></p>
+    </div>
+    <div style="margin-top:20px; display:flex; flex-direction:column; gap:8px;">
+        <button class="btn btn-main" onclick="downloadQR()">Descargar PNG</button>
+        <button class="btn btn-outline" onclick="closeModal()">Cerrar</button>
+    </div>
+</div>
+
+<script>
+    let currentUser = null;
+    let currentMode = 'normal';
+    let localDB = [];
+
+    // Comunicación con el Backend PHP
+    async function serverApi(action, method = 'POST', body = null) {
+        try {
+            const res = await fetch(`api.php?action=${action}`, {
+                method: method,
+                headers: { 'Content-Type': 'application/json' },
+                body: body ? JSON.stringify(body) : null
+            });
+            return await res.json();
+        } catch(e) { 
+            console.error("Error en servidor:", e);
+            return null; 
+        }
+    }
+
+    async function saveLog(action, details) {
+        if(!currentUser) return;
+        await serverApi('log', 'POST', {
+            email: currentUser,
+            log: { timestamp: new Date().toLocaleString(), action, details, device: navigator.platform }
+        });
+    }
+
+    window.onload = async () => {
+        const session = JSON.parse(localStorage.getItem('vP_sess'));
+        if (session) login(session.email, true);
+    };
+
+    function showF(f) {
+        ['loginForm','regForm','forgotForm'].forEach(id => document.getElementById(id).classList.add('hidden'));
+        document.getElementById(f+'Form').classList.remove('hidden');
+    }
+
+    async function handleAuth(m) {
+        const btn = m === 'login' ? document.getElementById('btnLogin') : document.getElementById('btnReg');
+        const email = (m === 'register' ? document.getElementById('rEmail').value : document.getElementById('lEmail').value).trim();
+        const pass = (m === 'register' ? document.getElementById('rPass').value : document.getElementById('lPass').value).trim();
+        
+        if(!email || !pass) return alert("Faltan datos.");
+        btn.innerHTML = '<span class="loader"></span>';
+
+        if (m === 'register') {
+            const profileData = { 
+                pass, 
+                a1: document.getElementById('rA1').value.toLowerCase(), 
+                a2: document.getElementById('rA2').value.toLowerCase(), 
+                created: new Date().toISOString() 
+            };
+            const res = await serverApi('auth', 'POST', { method: 'register', email, data: profileData });
+            if (res && res.success) {
+                currentUser = email;
+                await saveLog("REGISTRO", "Cuenta nueva creada");
+                login(email);
+            } else {
+                alert("Error: El usuario ya existe.");
+                btn.innerText = 'Registrar';
+            }
+        } else {
+            const res = await serverApi('auth', 'POST', { method: 'login', email, pass });
+            if (res && res.success) {
+                login(email);
+            } else {
+                btn.innerText = 'Entrar';
+                alert("Acceso denegado.");
+                await saveLog("FALLO_LOGIN", `Intento fallido: ${email}`);
+            }
+        }
+    }
+
+    async function login(e, auto = false) {
+        currentUser = e;
+        localStorage.setItem('vP_sess', JSON.stringify({ email: e }));
+        document.getElementById('uDisp').innerText = e;
+        document.getElementById('authScreen').classList.add('hidden');
+        document.getElementById('mainContent').classList.remove('hidden');
+        if(!auto) await saveLog("LOGIN", "Sesión iniciada");
+        fetchData();
+    }
+
+    async function logout() {
+        await saveLog("LOGOUT", "Cierre de sesión");
+        localStorage.removeItem('vP_sess');
+        location.reload();
+    }
+
+    function handleGenBtn() {
+        const btn = document.getElementById('btnGen');
+        const pOut = document.getElementById('pOut');
+        if (btn.innerText === "Generar") {
+            gen();
+            btn.innerText = "Copiar";
+            btn.className = "btn btn-success";
+            pOut.classList.add('no-blur');
+        } else {
+            copy(pOut.innerText);
+            btn.innerText = "Generar";
+            btn.className = "btn btn-outline";
+            pOut.classList.remove('no-blur');
+        }
+    }
+
+    function gen() {
+        let c = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+        let l = currentMode === 'adv' ? Math.max(12, Math.min(32, parseInt(document.getElementById('len').value))) : 12;
+        if(currentMode === 'adv') c += "!@#$%^&*()_+=-";
+        let p = ""; for(let i=0; i<l; i++) p += c.charAt(Math.floor(Math.random()*c.length));
+        document.getElementById('pOut').innerText = p;
+        document.getElementById('strengthBar').style.width = "100%";
+    }
+
+    async function fetchData() {
+        const data = await serverApi('passwords', 'POST', { email: currentUser });
+        localDB = Array.isArray(data) ? data : [];
+        renderLocal();
+    }
+
+    function renderLocal() {
+        const list = document.getElementById('logs'), q = document.getElementById('search').value.toLowerCase();
+        list.innerHTML = "";
+        const filtered = localDB.slice().reverse().filter(i => i.d.toLowerCase().includes(q));
+        filtered.forEach(i => {
+            list.innerHTML += `
+                <div class="log-item">
+                    <div style="display:flex; justify-content:space-between; font-size:0.85rem; font-weight:600; margin-bottom:10px;">
+                        <span>${i.d}</span><span style="font-weight:400; font-size:0.7rem; color:var(--muted);">${new Date(i.date).toLocaleDateString()}</span>
+                    </div>
+                    <div class="blur-text" style="background:#f8fafc; padding:12px; margin-bottom:15px; border-radius:6px; font-family:monospace; text-align:center; border:1px solid var(--border);" onclick="copy('${i.p}')">${i.p}</div>
+                    <div style="display:flex; gap:10px;">
+                        <button class="pill" style="flex:1" onclick="copy('${i.p}')">COPIAR</button>
+                        <button class="pill" onclick="openQR('${i.p}','${i.d}')">QR</button>
+                        <button class="pill" style="color:var(--danger);" onclick="del(${i.id})">BORRAR</button>
+                    </div>
+                </div>`;
+        });
+    }
+
+    async function save() {
+        const p = document.getElementById('pOut').innerText, d = document.getElementById('desc').value;
+        if(p.includes('•') || !d) return alert("Genera una clave y asígnale un nombre.");
+        
+        const btnSave = document.getElementById('btnSave');
+        btnSave.innerHTML = '<span class="loader"></span>';
+
+        const newItem = { id: Date.now(), p, d, date: Date.now() };
+        localDB.push(newItem);
+
+        const res = await serverApi('passwords', 'POST', { email: currentUser, passwords: localDB });
+        if(res && res.success) {
+            renderLocal();
+            await saveLog("GUARDADO", `Registro: ${d}`);
+            document.getElementById('desc').value = "";
+            btnSave.innerText = "Guardar Local";
+            resetGenState();
+        }
+    }
+
+    function resetGenState() {
+        const btn = document.getElementById('btnGen');
+        btn.innerText = "Generar";
+        btn.className = "btn btn-outline";
+        document.getElementById('pOut').classList.remove('no-blur');
+    }
+
+    async function del(id) {
+        if(!confirm("¿Eliminar definitivamente del servidor?")) return;
+        localDB = localDB.filter(i => i.id !== id);
+        const res = await serverApi('passwords', 'POST', { email: currentUser, passwords: localDB });
+        if(res && res.success) {
+            renderLocal();
+            await saveLog("ELIMINADO", "Se eliminó una contraseña");
+        }
+    }
+
+    function setMode(m) {
+        currentMode = m;
+        document.getElementById('btnN').classList.toggle('active', m === 'normal');
+        document.getElementById('btnA').classList.toggle('active', m === 'adv');
+        document.getElementById('advP').classList.toggle('hidden', m === 'normal');
+        resetGenState();
+    }
+
+    function copy(t) { navigator.clipboard.writeText(t); alert("Copiado al portapapeles."); }
+    function openQR(t, l) {
+        document.getElementById('qrcode').innerHTML = "";
+        document.getElementById('qr-label').innerText = l.toUpperCase();
+        new QRCode(document.getElementById("qrcode"), { text: t, width: 140, height: 140 });
+        document.getElementById('modal-qr').style.display = 'block'; document.getElementById('overlay').style.display = 'block';
+    }
+    function closeModal() { document.getElementById('modal-qr').style.display = 'none'; document.getElementById('overlay').style.display = 'none'; }
+    function downloadQR() {
+        html2canvas(document.getElementById('qr-area')).then(canvas => {
+            const link = document.createElement('a');
+            link.download = 'Clave_QR.png'; link.href = canvas.toDataURL(); link.click();
+        });
+    }
+</script>
+</body>
+</html>
