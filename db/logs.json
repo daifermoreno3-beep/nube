@@ -30,5 +30,13 @@
         "details": "Archivo subido: image.png en \/",
         "level": "INFO",
         "ip": "190.6.34.209"
+    },
+    {
+        "timestamp": "2026-01-21 23:20:09",
+        "user": "test1",
+        "action": "MKDIR",
+        "details": "Carpeta creada: test en \/",
+        "level": "INFO",
+        "ip": "190.6.34.209"
     }
 ]
