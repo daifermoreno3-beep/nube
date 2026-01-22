@@ -119,5 +119,12 @@
         "action": "LOGIN",
         "details": "Sesion iniciada",
         "type": "INFO"
+    },
+    {
+        "at": "2026-01-21 23:29:54",
+        "user": "3",
+        "action": "TRASH",
+        "details": "Movido a papelera: uploads\/3\/image.png",
+        "type": "INFO"
     }
 ]
