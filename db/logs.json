@@ -112,5 +112,12 @@
         "action": "UPLOAD",
         "details": "Subido exitoso: cC.png",
         "type": "INFO"
+    },
+    {
+        "at": "2026-01-21 23:28:57",
+        "user": "3",
+        "action": "LOGIN",
+        "details": "Sesion iniciada",
+        "type": "INFO"
     }
 ]
