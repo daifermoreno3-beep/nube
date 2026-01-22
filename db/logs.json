@@ -84,5 +84,12 @@
         "action": "LOGIN",
         "details": "Sesion iniciada",
         "type": "INFO"
+    },
+    {
+        "at": "2026-01-21 23:26:24",
+        "user": "3",
+        "action": "UPLOAD",
+        "details": "Subido exitoso: sa_wood07_128.png",
+        "type": "INFO"
     }
 ]
