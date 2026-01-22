@@ -98,5 +98,12 @@
         "action": "UPLOAD",
         "details": "Subido exitoso: index.html",
         "type": "INFO"
+    },
+    {
+        "at": "2026-01-21 23:26:35",
+        "user": "3",
+        "action": "UPLOAD",
+        "details": "Subido exitoso: image.png",
+        "type": "INFO"
     }
 ]
