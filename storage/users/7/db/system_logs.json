@@ -3,5 +3,10 @@
         "timestamp": "2026-01-22 00:28:00",
         "action": "Estructura de seguridad creada.",
         "ip": "190.6.34.209"
+    },
+    {
+        "timestamp": "2026-01-22 00:28:01",
+        "action": "Inicio de sesi\u00f3n seguro.",
+        "ip": "190.6.34.209"
     }
 ]
