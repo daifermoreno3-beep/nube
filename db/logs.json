@@ -133,5 +133,12 @@
         "action": "TRASH",
         "details": "Movido a papelera: uploads\/3\/index.html",
         "type": "INFO"
+    },
+    {
+        "at": "2026-01-21 23:29:59",
+        "user": "3",
+        "action": "TRASH",
+        "details": "Movido a papelera: uploads\/3\/sa_wood07_128.png",
+        "type": "INFO"
     }
 ]
